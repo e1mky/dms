@@ -145,9 +145,13 @@ exit
 `interface gi1/0/2.200 ip firewall disable description vlan200 ip address 10.0.10.33/27 exit`
 
 - - для подсети управления - **vlan300**:
-
-`interface gi1/0/2.300 ip firewall disable description vlan300 ip address 10.0.10.65/27 exit`
-
+```
+interface gi1/0/2.300 
+ip firewall disable 
+description vlan300 
+ip address 10.0.10.65/27 
+exit
+```
 - - применяем и подтверждаем внесённые изменения:
 
 ```
@@ -351,9 +355,16 @@ exit
 ```
 
 - Создаём набор правил **SNAT**. В атрибутах набора укажем, что правила применяются только для пакетов, направляющихся в публичную сеть – в зону **public**. Правила включают проверку адреса источника данных на принадлежность к пулу **COMPANY**:
-
-`ruleset SNAT to zone public rule 1 match source-address COMPANY action source-nat pool WAN enable exit exit`
-
+```
+ruleset SNAT
+to zone public 
+rule 1 match
+source-address COMPANY 
+action source-nat pool WAN 
+enable 
+exit 
+exit
+```
 - Применяем и подтверждаем внесённые изменения:
 
 ```
