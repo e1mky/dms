@@ -142,8 +142,13 @@ exit
 
 - - для клиентской подсети - **vlan200:**
 
-`interface gi1/0/2.200 ip firewall disable description vlan200 ip address 10.0.10.33/27 exit`
-
+```
+interface gi1/0/2.200
+ip firewall disable
+description vlan200
+ip address 10.0.10.33/27
+exit
+```
 - - для подсети управления - **vlan300**:
 ```
 interface gi1/0/2.300 
@@ -358,8 +363,8 @@ exit
 ```
 ruleset SNAT
 to zone public 
-rule 1 match
-source-address COMPANY 
+rule 1
+match source-address COMPANY 
 action source-nat pool WAN 
 enable 
 exit 
@@ -418,9 +423,12 @@ _После чего отправляем в перезугрузку SW-HQ, т.
 #### SW-HQ:
 
 - назначив средствами **iproute2** временно на интерфейс,смотрящий в сторону **RTR-HQ** - тегированный подинтерфейс с IP-адресом из подсети для **vlan300,** для возможности установки пакета **openvswitch**:
-
-`ip link add link ens33 name ens33.300 type vlan id 300 ip link set dev ens33.300 up ip addr add 10.0.10.66/27 dev ens33.300 ip route add 0.0.0.0/0 via 10.0.10.65 echo nameserver 77.88.8.8 > /etc/resolv.conf`
-
+```
+ip link add link ens33 name ens33.300 type vlan id 300 
+ip link set dev ens33.300 up ip addr add 10.0.10.66/27 dev ens33.300 
+ip route add 0.0.0.0/0 via 10.0.10.65 
+echo nameserver 77.88.8.8 > /etc/resolv.conf
+```
 - обновляем список пакетов и устанавливаем **openvswitch**:
 
 ```
@@ -605,9 +613,18 @@ modprobe 8021q
 
 - Создадим пул адресов с именем «**COMPANY-HQ**» и добавим в данный пул адресов диапазон IP-адресов для выдачи в аренду клиентам. Укажем параметры подсети, к которой принадлежит данный пул, и время аренды для выдаваемых адресов:
     - в качестве адреса **DNS-сервера** указываем адрес **SRV-HQ**:
-
-`configure terminal ip dhcp-server pool COMPANY-HQ network 10.0.10.32/27 default-lease-time 3:00:00 address-range 10.0.10.33-10.0.10.62 excluded-address-range 10.0.10.33                       default-router 10.0.10.33  dns-server 10.0.10.2 domain-name company.prof exit`
-
+```
+configure terminal
+ip dhcp-server pool COMPANY-HQ
+network 10.0.10.32/27
+default-lease-time 3:00:00
+address-range 10.0.10.33-10.0.10.62
+excluded-address-range 10.0.10.33                      
+default-router 10.0.10.33 
+dns-server 10.0.10.2
+domain-name company.prof
+exit
+```
 - Включаем **DHCP-сервер**:
 
 ```
@@ -674,17 +691,34 @@ do confirm
     - указав внешний IP-адрес **RTR-BR;**
     - указав IP-адрес туннельного интерфейса **gre 1:**
 
-Explain
-
-`tunnel gre 1   ttl 16   ip firewall disable   local address 11.11.11.11   remote address 22.22.22.22   ip address 172.16.1.1/30   enable exit`
-
+```
+tunnel gre 1
+ttl 16
+ip firewall disable
+local address 11.11.11.11
+remote address 22.22.22.22
+ip address 172.16.1.1/30
+enable
+exit
+```
 - Также для проверки можно разрешить **ICMP** из зоны **public** в зону **self** (т.е. на RTR-HQ) для проверки связности туннельного интерфейса:
     - И разрешаем трафик **GRE**:
-
-Explain
-
-`security zone-pair public self   rule 1     description "ICMP"     action permit     match protocol icmp     enable   exit   rule 2     description "GRE"     action permit     match protocol gre     enable   exit exit`
-
+```
+security zone-pair public self
+  rule 1
+    description "ICMP"
+    action permit
+    match protocol icmp
+    enable
+  exit
+  rule 2
+    description "GRE"
+    action permit
+    match protocol gre
+    enable
+  exit
+exit
+```
 - Применияем и подтверждаем внесённые изменения:
 
 ```
@@ -720,9 +754,13 @@ do confirm
 **RTR-HQ | RTR-BR:**
 
 - Создадим профиль протокола **IKE**. В профиле укажем группу **Диффи-Хэллмана 2**, алгоритм шифрования **AES 128 bit**, алгоритм аутентификации **MD5**. Данные параметры безопасности используются для защиты **IKE-соединения**:
-
-`security ike proposal ike_prop1   authentication algorithm md5   encryption algorithm aes128   dh-group 2 exit`
-
+```
+security ike proposal ike_prop1
+  authentication algorithm md5
+  encryption algorithm aes128
+  dh-group 2
+exit
+```
 - Создадим политику протокола **IKE**. В политике указывается список профилей протокола **IKE**, по которым могут согласовываться узлы и ключ аутентификации:
 
 ```
@@ -734,17 +772,35 @@ exit
 
 - Создадим шлюз протокола IKE. В данном профиле указывается GRE-туннель, политика, версия протокола и режим перенаправления трафика в туннель:
     - **RTR-HQ:**
-
-`security ike gateway ike_gw1   ike-policy ike_pol1   local address 11.11.11.11   local network 11.11.11.11/32 protocol gre    remote address 22.22.22.22   remote network 22.22.22.22/32 protocol gre    mode policy-based exit`
-
+```
+security ike gateway ike_gw1
+  ike-policy ike_pol1
+  local address 11.11.11.11
+  local network 11.11.11.11/32 protocol gre 
+  remote address 22.22.22.22
+  remote network 22.22.22.22/32 protocol gre 
+  mode policy-based
+exit
+```
 - - **RTR-BR:**
-
-`security ike gateway ike_gw1   ike-policy ike_pol1   local address 22.22.22.22   local network 22.22.22.22/32 protocol gre    remote address 11.11.11.11   remote network 11.11.11.11/32 protocol gre    mode policy-based exit`
-
+```
+security ike gateway ike_gw1
+  ike-policy ike_pol1
+  local address 22.22.22.22
+  local network 22.22.22.22/32 protocol gre 
+  remote address 11.11.11.11
+  remote network 11.11.11.11/32 protocol gre 
+  mode policy-based
+exit
+```
 - Создадим профиль параметров безопасности для IPsec-туннеля. В профиле укажем группу Диффи-Хэллмана 2, алгоритм шифрования AES 128 bit, алгоритм аутентификации MD5. Данные параметры безопасности используются для защиты IPsec-туннеля:
-
-`security ipsec proposal ipsec_prop1   authentication algorithm md5   encryption algorithm aes128   pfs dh-group 2 exit`
-
+```
+security ipsec proposal ipsec_prop1
+  authentication algorithm md5
+  encryption algorithm aes128
+  pfs dh-group 2
+exit
+```
 - Создадим политику для IPsec-туннеля. В политике указывается список профилей IPsec-туннеля, по которым могут согласовываться узлы.
 
 ```
@@ -754,13 +810,31 @@ exit
 ```
 
 - Создадим IPsec VPN. В VPN указывается шлюз IKE-протокола, политика IP sec-туннеля, режим обмена ключами и способ установления соединения. После ввода всех параметров включим туннель командой enable.
-
-`security ipsec vpn ipsec1   ike establish-tunnel route   ike gateway ike_gw1   ike ipsec-policy ipsec_pol1   enable exit`
-
+```
+security ipsec vpn ipsec1
+  ike establish-tunnel route
+  ike gateway ike_gw1
+  ike ipsec-policy ipsec_pol1
+  enable
+exit
+```
 - Настраиваем **firewall:**
-
-`security zone-pair public self   rule 3     description "ESP"     action permit     match protocol esp     enable   exit   rule 4     description "AH"     action permit     match protocol ah     enable   exit exit`
-
+```
+security zone-pair public self
+  rule 3
+    description "ESP"
+    action permit
+    match protocol esp
+    enable
+  exit
+  rule 4
+    description "AH"
+    action permit
+    match protocol ah
+    enable
+  exit
+exit
+```
 - Применияем и подтверждаем внесённые изменения:
 
 ```
@@ -799,20 +873,51 @@ do confirm
 - Создадим **OSPF-процесс** с идентификатором **1** и перейдём в режим конфигурирования протокола **OSPF**
     - Создадим и включим требуемую область
     - Включим OSPF-процесс
-
-`router ospf 1   area 0.0.0.0     enable   exit   enable exit`
-
+```
+router ospf 1
+  area 0.0.0.0
+    enable
+  exit
+  enable
+exit
+```
 - Для установления соседства с другими маршрутизаторами привяжем их к OSPF-процессу и области.
     - Далее включим на интерфейсе маршрутизацию по протоколу OSPF:
         - интерфейс **gre 1** - для установления соседства
         - интерфейс **gi1/0/2.(100,200,300)** - для обявления локальных сетей
 
-`tunnel gre 1   ip ospf instance 1   ip ospf exit  interface gigabitethernet 1/0/2.100   ip ospf instance 1   ip ospf exit  interface gigabitethernet 1/0/2.200   ip ospf instance 1   ip ospf exit  interface gigabitethernet 1/0/2.300   ip ospf instance 1   ip ospf exit`
+```
+tunnel gre 1
+  ip ospf instance 1
+  ip ospf
+exit
 
+interface gigabitethernet 1/0/2.100
+  ip ospf instance 1
+  ip ospf
+exit
+
+interface gigabitethernet 1/0/2.200
+  ip ospf instance 1
+  ip ospf
+exit
+
+interface gigabitethernet 1/0/2.300
+  ip ospf instance 1
+  ip ospf
+exit
+```
 - Разрешаем трафик **OSPF**:
-
-`security zone-pair public self   rule 5     description "OSPF"     action permit     match protocol ospf     enable   exit exit`
-
+```
+security zone-pair public self
+  rule 5
+    description "OSPF"
+    action permit
+    match protocol ospf
+    enable
+  exit
+exit
+```
 - Применияем и подтверждаем внесённые изменения:
 
 ```
@@ -1410,7 +1515,6 @@ vim /etc/bind/local.conf
 
 - Правим конфигурационный файл "**/etc/net/ifaces/ens33/resolv.conf**":
 
-Explain
 
 `cat <<EOF > /etc/net/ifaces/ens33/resolv.conf search company.prof nameserver 10.0.10.2 nameserver 10.0.20.2 EOF`
 
